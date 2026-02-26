@@ -217,13 +217,14 @@ body {
 <!-- ── Header ──────────────────────────────────────────────── -->
 <div class="header">
   <h1>⚔ L2 Reborn — Raid Boss Timer</h1>
-  <p>Lineage 2 Reborn Signature · C5 Chronicle · All times UTC+0</p>
+  <p>Lineage 2 Reborn Signature · C5 Chronicle · <span id="tz-label">All times UTC+0</span></p>
 </div>
 
 <!-- ── Top Bar ─────────────────────────────────────────────── -->
 <div class="top-bar">
   <span id="connection-status"><span class="status-dot dot-orange"></span> Connecting…</span>
   <span id="last-update" style="color:var(--text-dim)"></span>
+  <button class="filter-btn active" id="tz-toggle" onclick="toggleTimezone()" style="margin-left:0.4rem">🕐 UTC</button>
 </div>
 
 <!-- ── Controls ────────────────────────────────────────────── -->
@@ -302,19 +303,42 @@ body {
 // ┌─────────────────────────────────────────────────────────────┐
 // │  CONFIGURATION — Update this URL after deploying the Worker │
 // └─────────────────────────────────────────────────────────────┘
-const WORKER_URL = "https://l2rb-timer.vkotzama.workers.dev";
+const WORKER_URL = "https://l2rb-timer.YOUR-SUBDOMAIN.workers.dev";
 
 // ── State ──────────────────────────────────────────────────
 let timersData = [];
 
-// ── UTC Formatting ─────────────────────────────────────────
-function fmtUTC(ts) {
+// ── Timezone ───────────────────────────────────────────────
+let useLocal = false;
+
+function toggleTimezone() {
+  useLocal = !useLocal;
+  const btn = document.getElementById("tz-toggle");
+  const label = document.getElementById("tz-label");
+  if (useLocal) {
+    const offset = -new Date().getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const h = Math.floor(Math.abs(offset) / 60);
+    const m = Math.abs(offset) % 60;
+    const tzStr = `UTC${sign}${h}${m ? ":" + String(m).padStart(2, "0") : ""}`;
+    btn.textContent = `🕐 ${tzStr}`;
+    label.textContent = `All times ${tzStr} (your local)`;
+  } else {
+    btn.textContent = "🕐 UTC";
+    label.textContent = "All times UTC+0";
+  }
+  renderAll();
+}
+
+// ── Time Formatting ────────────────────────────────────────
+function fmtTime(ts) {
   const d = new Date(ts);
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  const mon = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const h = String(d.getUTCHours()).padStart(2, "0");
-  const m = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${day}/${mon} ${h}:${m} UTC`;
+  const day = useLocal ? String(d.getDate()).padStart(2, "0") : String(d.getUTCDate()).padStart(2, "0");
+  const mon = useLocal ? String(d.getMonth() + 1).padStart(2, "0") : String(d.getUTCMonth() + 1).padStart(2, "0");
+  const h = useLocal ? String(d.getHours()).padStart(2, "0") : String(d.getUTCHours()).padStart(2, "0");
+  const m = useLocal ? String(d.getMinutes()).padStart(2, "0") : String(d.getUTCMinutes()).padStart(2, "0");
+  const tz = useLocal ? "Local" : "UTC";
+  return `${day}/${mon} ${h}:${m} ${tz}`;
 }
 function fmtDuration(ms) {
   if (ms <= 0) return "now";
@@ -429,11 +453,11 @@ function renderCard(boss) {
   if (boss.killTime) {
     timerHtml = `
       <div class="boss-info">
-        <span>Killed: ${fmtUTC(boss.killTime)}</span>
+        <span>Killed: ${fmtTime(boss.killTime)}</span>
         ${boss.reportedBy ? `<span>by ${boss.reportedBy}</span>` : ""}
       </div>
       <div class="boss-info">
-        <span>Window: ${fmtUTC(earliestMs)} — ${fmtUTC(latestMs)}</span>
+        <span>Window: ${fmtTime(earliestMs)} — ${fmtTime(latestMs)}</span>
       </div>`;
   } else {
     timerHtml = `
@@ -534,7 +558,7 @@ async function fetchTimers() {
     const data = await res.json();
     timersData = data.timers;
     setConnection("ok");
-    document.getElementById("last-update").textContent = `Updated ${fmtUTC(Date.now())}`;
+    document.getElementById("last-update").textContent = `Updated ${fmtTime(Date.now())}`;
     renderAll();
   } catch (e) {
     setConnection("error", e.message);
