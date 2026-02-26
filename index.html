@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>L2 Reborn — Raid Boss Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+:root {
+  --bg: #0d0d0f; --surface: #16161a; --card: #1c1c22; --border: #2a2a32;
+  --gold: #c9a84c; --gold-dim: #8a7233; --text: #d4d0c8; --text-dim: #7a7770;
+  --red: #c0392b; --orange: #e67e22; --green: #27ae60; --blue: #2980b9;
+  --yellow: #f1c40f; --purple: #9b59b6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Crimson Text', Georgia, serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; line-height: 1.5;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  text-align: center; padding: 1.5rem 1rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #12121590 0%, var(--bg) 100%);
+}
+.header h1 {
+  font-family: 'Cinzel', serif; color: var(--gold);
+  font-size: 20px; letter-spacing: 0.08em;
+}
+.header p { color: var(--text-dim); font-size: 12px; margin-top: 0.25rem; }
+
+/* ── Top Bar ──────────────────────────────────────────────── */
+.top-bar {
+  display: flex; justify-content: center; align-items: center; gap: 1rem;
+  padding: 0.4rem 1rem; background: var(--surface);
+  border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-right: 4px;
+}
+.dot-green  { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.dot-orange { background: var(--orange); }
+.dot-red    { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.dot-pulse  { animation: pulse 2s ease-in-out infinite; }
+
+/* ── Controls Bar ─────────────────────────────────────────── */
+.controls {
+  max-width: 1060px; margin: 0.8rem auto 0; padding: 0 1rem;
+}
+.controls-row {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.controls-label {
+  font-size: 12px; color: var(--text-dim); white-space: nowrap; font-weight: 600;
+}
+.filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.filter-btn {
+  font-family: 'Crimson Text', serif;
+  font-size: 12px; padding: 3px 10px; border-radius: 4px;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--card); color: var(--text-dim); transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--gold-dim); }
+.filter-btn.active { color: #fff; }
+.filter-btn.active[data-status="dead"]    { background: var(--red); border-color: var(--red); }
+.filter-btn.active[data-status="window"]  { background: var(--orange); border-color: var(--orange); }
+.filter-btn.active[data-status="alive"]   { background: var(--text-dim); border-color: var(--text-dim); }
+.filter-btn.active[data-status="overdue"] { background: var(--green); border-color: var(--green); }
+.filter-btn.active[data-type="raid"]      { background: var(--blue); border-color: var(--blue); }
+.filter-btn.active[data-type="epic"]      { background: var(--purple); border-color: var(--purple); }
+
+.sort-select {
+  font-family: 'Crimson Text', serif; font-size: 12px;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+}
+.sort-select:focus { outline: 1px solid var(--gold-dim); }
+
+.search-input, .level-input {
+  font-family: 'Crimson Text', serif; font-size: 12px;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+}
+.search-input { width: 160px; }
+.level-input  { width: 80px; text-align: center; }
+.search-input::placeholder, .level-input::placeholder { color: var(--text-dim); }
+.search-input:focus, .level-input:focus { outline: 1px solid var(--gold-dim); }
+
+/* ── Legend ────────────────────────────────────────────────── */
+.legend {
+  max-width: 1060px; margin: 0.4rem auto; padding: 0 1rem;
+  display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 12px; color: var(--text-dim);
+}
+.legend-item { display: flex; align-items: center; gap: 3px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Boss Grid ────────────────────────────────────────────── */
+.section { max-width: 1060px; margin: 0.8rem auto; padding: 0 1rem; }
+.section h2 {
+  font-family: 'Cinzel', serif; color: var(--gold); font-size: 16px;
+  border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; margin-bottom: 0.6rem;
+  letter-spacing: 0.06em;
+}
+.boss-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.6rem;
+}
+.empty-state {
+  grid-column: 1 / -1; text-align: center; padding: 1.5rem;
+  color: var(--text-dim); font-size: 14px; font-style: italic;
+}
+
+/* ── Loading / Error ──────────────────────────────────────── */
+.loading-state {
+  text-align: center; padding: 3rem 1rem; color: var(--text-dim); font-size: 14px;
+}
+.loading-state .spinner {
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid var(--border); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+  margin-bottom: 0.5rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-state {
+  text-align: center; padding: 2rem 1rem; color: var(--red); font-size: 14px;
+}
+
+/* ── Boss Card ────────────────────────────────────────────── */
+.boss-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.7rem 0.8rem; transition: border-color 0.3s;
+}
+.boss-card.status-alive   { border-left: 3px solid var(--text-dim); }
+.boss-card.status-dead    { border-left: 3px solid var(--red); }
+.boss-card.status-window  { border-left: 3px solid var(--orange); }
+.boss-card.status-overdue { border-left: 3px solid var(--green); }
+
+.boss-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; }
+.boss-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); }
+.boss-level { font-size: 16px; color: var(--text-dim); font-weight: 600; font-family: 'Cinzel', serif; }
+
+.boss-status { font-size: 12px; margin-bottom: 0.3rem; font-weight: 600; }
+.boss-status.st-alive   { color: var(--text-dim); }
+.boss-status.st-dead    { color: var(--red); }
+.boss-status.st-window  { color: var(--orange); }
+.boss-status.st-overdue { color: var(--green); }
+
+.boss-info { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+.boss-info span { display: inline-block; margin-right: 0.8rem; }
+
+.countdown { font-size: 14px; color: var(--text); margin-top: 0.2rem; font-weight: 600; }
+
+/* ── Collapsible Drops ────────────────────────────────────── */
+.drops-toggle { margin-top: 0.4rem; width: 100%; }
+.drops-toggle summary {
+  cursor: pointer; font-size: 12px; color: var(--purple);
+  list-style: none; user-select: none;
+}
+.drops-toggle summary::-webkit-details-marker { display: none; }
+.drops-toggle summary::before { content: "💎 "; }
+.drops-toggle summary::after { content: " ▸"; font-size: 10px; }
+.drops-toggle[open] summary::after { content: " ▾"; }
+.drop-list {
+  margin-top: 0.3rem; padding: 0.4rem; background: var(--surface);
+  border-radius: 4px; border: 1px solid var(--border);
+}
+.drop-list ul { list-style: none; padding: 0; }
+.drop-list li {
+  font-size: 12px; color: var(--text); padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+}
+.drop-list li:last-child { border-bottom: none; }
+.drop-list .wiki-link {
+  display: inline-block; margin-top: 0.3rem; font-size: 12px;
+  color: var(--blue); text-decoration: none;
+}
+.drop-list .wiki-link:hover { text-decoration: underline; }
+
+/* ── Scouting Intel ───────────────────────────────────────── */
+.scout-intel {
+  margin-top: 0.3rem; padding: 0.25rem 0.5rem;
+  border-radius: 4px; font-size: 12px;
+  border: 1px dashed var(--border); background: rgba(255,255,255,0.02);
+}
+.scout-intel.scout-alive { border-color: var(--green); color: var(--green); }
+.scout-intel.scout-dead  { border-color: var(--red); color: var(--red); }
+.scout-intel .scout-age  { color: var(--text-dim); }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.footer {
+  text-align: center; padding: 1.2rem; color: var(--text-dim); font-size: 12px;
+  border-top: 1px solid var(--border); margin-top: 1.5rem;
+}
+.footer a { color: var(--gold-dim); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+.count-badge {
+  display: inline-block; font-family: 'Crimson Text', serif;
+  font-size: 12px; color: var(--text-dim); margin-left: 0.5rem;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .boss-grid { grid-template-columns: 1fr; }
+  .controls-row { gap: 0.4rem; }
+  .search-input { width: 120px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<div class="header">
+  <h1>⚔ L2 Reborn — Raid Boss Timer</h1>
+  <p>Lineage 2 Reborn Signature · C5 Chronicle · All times UTC+0</p>
+</div>
+
+<!-- ── Top Bar ─────────────────────────────────────────────── -->
+<div class="top-bar">
+  <span id="connection-status"><span class="status-dot dot-orange"></span> Connecting…</span>
+  <span id="last-update" style="color:var(--text-dim)"></span>
+</div>
+
+<!-- ── Controls ────────────────────────────────────────────── -->
+<div class="controls">
+  <div class="controls-row">
+    <span class="controls-label">Status:</span>
+    <div class="filter-group" id="status-filters">
+      <button class="filter-btn active" data-status="dead" onclick="toggleFilter(this)">🔴 Dead</button>
+      <button class="filter-btn active" data-status="window" onclick="toggleFilter(this)">🟠 Window</button>
+      <button class="filter-btn active" data-status="alive" onclick="toggleFilter(this)">⚪ Unknown</button>
+      <button class="filter-btn active" data-status="overdue" onclick="toggleFilter(this)">🟢 Respawned</button>
+    </div>
+    <span class="controls-label" style="margin-left:0.6rem">Type:</span>
+    <div class="filter-group" id="type-filters">
+      <button class="filter-btn active" data-type="raid" onclick="toggleFilter(this)">Raid</button>
+      <button class="filter-btn active" data-type="epic" onclick="toggleFilter(this)">Epic</button>
+    </div>
+  </div>
+  <div class="controls-row">
+    <span class="controls-label">Sort:</span>
+    <select class="sort-select" id="sort-select" onchange="renderAll()">
+      <option value="urgency">Urgency (soonest first)</option>
+      <option value="level-asc">Level ↑</option>
+      <option value="level-desc">Level ↓</option>
+      <option value="name">Name A–Z</option>
+    </select>
+    <span class="controls-label" style="margin-left:0.6rem">Search:</span>
+    <input class="search-input" id="search-input" type="text" placeholder="Boss name…" oninput="renderAll()"/>
+    <span class="controls-label" style="margin-left:0.6rem">Level:</span>
+    <input class="level-input" id="level-min" type="text" placeholder="Min" oninput="renderAll()"/>
+    <span style="color:var(--text-dim); font-size:12px;">—</span>
+    <input class="level-input" id="level-max" type="text" placeholder="Max" oninput="renderAll()"/>
+  </div>
+</div>
+
+<!-- ── Legend ───────────────────────────────────────────────── -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--text-dim)"></div> Unknown</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Dead</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Window</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Respawned</div>
+  <div class="legend-item" style="border-left:1px solid var(--border); padding-left:0.6rem;">
+    <div class="legend-dot" style="background:var(--green); border:1px dashed var(--green)"></div> Scout: Alive</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red); border:1px dashed var(--red)"></div> Scout: Dead</div>
+</div>
+
+<!-- ── Boss Sections ───────────────────────────────────────── -->
+<div class="section" id="section-raid">
+  <h2>Raid Bosses <span class="count-badge" id="raid-count"></span></h2>
+  <div class="boss-grid" id="raid-grid">
+    <div class="loading-state" id="raid-loading"><div class="spinner"></div><br/>Loading boss data…</div>
+  </div>
+</div>
+
+<div class="section" id="section-epic">
+  <h2>Epic Bosses <span class="count-badge" id="epic-count"></span></h2>
+  <div class="boss-grid" id="epic-grid">
+    <div class="loading-state" id="epic-loading"><div class="spinner"></div><br/>Loading boss data…</div>
+  </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────── -->
+<div class="footer">
+  <p>Data sourced from <a href="https://l2reborn.org/features" target="_blank">L2 Reborn</a>,
+     <a href="https://lineage2wiki.org/" target="_blank">lineage2wiki.org</a>, and
+     <a href="https://lineage.pmfun.com/" target="_blank">PMfun</a>.
+     Respawn times may change — verify with your server.</p>
+  <p style="margin-top:0.3rem">Report kills via <code style="font-size:12px">/kill</code> in Discord · Dashboard is read-only</p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// L2 Reborn — Raid Boss Timer · Dashboard
+// ═══════════════════════════════════════════════════════════════
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │  CONFIGURATION — Update this URL after deploying the Worker │
+// └─────────────────────────────────────────────────────────────┘
+const WORKER_URL = "https://l2rb-timer.vkotzama.workers.dev";
+
+// ── State ──────────────────────────────────────────────────
+let timersData = [];
+
+// ── UTC Formatting ─────────────────────────────────────────
+function fmtUTC(ts) {
+  const d = new Date(ts);
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const mon = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const h = String(d.getUTCHours()).padStart(2, "0");
+  const m = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${day}/${mon} ${h}:${m} UTC`;
+}
+function fmtDuration(ms) {
+  if (ms <= 0) return "now";
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// ── Status Logic ───────────────────────────────────────────
+function getStatus(boss) {
+  if (!boss.killTime) return "alive";
+  const elapsed = Date.now() - boss.killTime;
+  const baseMs = boss.respawnBaseH * 3600000;
+  const maxMs = (boss.respawnBaseH + boss.respawnRandomH) * 3600000;
+  if (elapsed >= maxMs) return "overdue";
+  if (elapsed >= baseMs) return "window";
+  return "dead";
+}
+
+function getUrgency(boss) {
+  const status = getStatus(boss);
+  const now = Date.now();
+  if (status === "window") {
+    const closes = boss.killTime + (boss.respawnBaseH + boss.respawnRandomH) * 3600000;
+    return -200000000000 + (closes - now);
+  }
+  if (status === "dead") {
+    const opens = boss.killTime + boss.respawnBaseH * 3600000;
+    return -100000000000 + (opens - now);
+  }
+  if (status === "overdue") return 0;
+  return 100000000000 + boss.level;
+}
+
+// ── Filters ────────────────────────────────────────────────
+function getActiveStatuses() {
+  return [...document.querySelectorAll("#status-filters .filter-btn.active")].map(b => b.dataset.status);
+}
+function getActiveTypes() {
+  return [...document.querySelectorAll("#type-filters .filter-btn.active")].map(b => b.dataset.type);
+}
+function toggleFilter(btn) {
+  btn.classList.toggle("active");
+  renderAll();
+}
+
+function getFilters() {
+  const statuses = getActiveStatuses();
+  const types = getActiveTypes();
+  const search = document.getElementById("search-input").value.toLowerCase().trim();
+  const minLvl = parseInt(document.getElementById("level-min").value) || 0;
+  const maxLvl = parseInt(document.getElementById("level-max").value) || 999;
+  return { statuses, types, search, minLvl, maxLvl };
+}
+
+function filterBoss(boss, filters) {
+  const status = getStatus(boss);
+  if (!filters.statuses.includes(status)) return false;
+  if (!filters.types.includes(boss.type)) return false;
+  if (boss.level < filters.minLvl || boss.level > filters.maxLvl) return false;
+  if (filters.search && !boss.name.toLowerCase().includes(filters.search)) return false;
+  return true;
+}
+
+// ── Sorting ────────────────────────────────────────────────
+function getSorter() {
+  const val = document.getElementById("sort-select").value;
+  switch (val) {
+    case "level-asc":  return (a, b) => a.level - b.level;
+    case "level-desc": return (a, b) => b.level - a.level;
+    case "name":       return (a, b) => a.name.localeCompare(b.name);
+    case "urgency":
+    default:           return (a, b) => getUrgency(a) - getUrgency(b);
+  }
+}
+
+// ── Render Card ────────────────────────────────────────────
+function renderCard(boss) {
+  const status = getStatus(boss);
+  const baseMs = boss.respawnBaseH * 3600000;
+  const maxMs = (boss.respawnBaseH + boss.respawnRandomH) * 3600000;
+  const earliestMs = boss.killTime ? boss.killTime + baseMs : 0;
+  const latestMs = boss.killTime ? boss.killTime + maxMs : 0;
+  const now = Date.now();
+
+  let statusText = "", countdownText = "";
+  switch (status) {
+    case "alive":   statusText = "UNKNOWN / ALIVE"; break;
+    case "dead":    statusText = "DEAD"; countdownText = `Window opens in ${fmtDuration(earliestMs - now)}`; break;
+    case "window":  statusText = "WINDOW OPEN"; countdownText = `Window closes in ${fmtDuration(latestMs - now)}`; break;
+    case "overdue": statusText = "RESPAWNED"; break;
+  }
+
+  const dropItems = (boss.keyDrops || []).map(d => `<li>${d}</li>`).join("");
+  const wikiLink = boss.wikiUrl
+    ? `<a class="wiki-link" href="${boss.wikiUrl}" target="_blank">📜 Full drop table on wiki →</a>` : "";
+
+  let scoutHtml = "";
+  if (boss.scoutStatus && boss.scoutAt) {
+    const ageStr = fmtDuration(now - boss.scoutAt);
+    if (boss.scoutStatus === "alive") {
+      scoutHtml = `<div class="scout-intel scout-alive">✅ Alive — ${boss.scoutBy} <span class="scout-age">(${ageStr} ago)</span></div>`;
+    } else {
+      scoutHtml = `<div class="scout-intel scout-dead">❌ Dead (unknown kill) — ${boss.scoutBy} <span class="scout-age">(${ageStr} ago)</span></div>`;
+    }
+  }
+
+  let timerHtml = "";
+  if (boss.killTime) {
+    timerHtml = `
+      <div class="boss-info">
+        <span>Killed: ${fmtUTC(boss.killTime)}</span>
+        ${boss.reportedBy ? `<span>by ${boss.reportedBy}</span>` : ""}
+      </div>
+      <div class="boss-info">
+        <span>Window: ${fmtUTC(earliestMs)} — ${fmtUTC(latestMs)}</span>
+      </div>`;
+  } else {
+    timerHtml = `
+      <div class="boss-info">
+        <span>Respawn: ${boss.respawnBaseH}h + ${boss.respawnRandomH}h random</span>
+        <span>Drops: ${boss.drops || "—"}</span>
+      </div>`;
+  }
+
+  return `
+    <div class="boss-card status-${status}" id="boss-${boss.id}" data-boss-id="${boss.id}">
+      <div class="boss-header">
+        <span class="boss-name">${boss.name}</span>
+        <span class="boss-level">Lv.${boss.level}</span>
+      </div>
+      <div class="boss-status st-${status}">${statusText}</div>
+      ${timerHtml}
+      ${countdownText ? `<div class="countdown" data-countdown="${boss.id}">${countdownText}</div>` : ""}
+      ${scoutHtml}
+      <details class="drops-toggle">
+        <summary>Key Drops (${(boss.keyDrops || []).length})</summary>
+        <div class="drop-list">
+          <ul>${dropItems || "<li>No data yet</li>"}</ul>
+          ${wikiLink}
+        </div>
+      </details>
+    </div>`;
+}
+
+// ── Render All ─────────────────────────────────────────────
+function renderAll() {
+  if (timersData.length === 0) return; // Still loading
+
+  const filters = getFilters();
+  const sorter = getSorter();
+
+  const raids = timersData.filter(b => b.type === "raid" && filterBoss(b, filters)).sort(sorter);
+  const epics = timersData.filter(b => b.type === "epic" && filterBoss(b, filters)).sort(sorter);
+
+  const raidGrid = document.getElementById("raid-grid");
+  const epicGrid = document.getElementById("epic-grid");
+
+  document.getElementById("section-raid").style.display = filters.types.includes("raid") ? "" : "none";
+  document.getElementById("section-epic").style.display = filters.types.includes("epic") ? "" : "none";
+
+  raidGrid.innerHTML = raids.length
+    ? raids.map(renderCard).join("")
+    : '<div class="empty-state">No raid bosses match current filters</div>';
+  epicGrid.innerHTML = epics.length
+    ? epics.map(renderCard).join("")
+    : '<div class="empty-state">No epic bosses match current filters</div>';
+
+  const totalRaids = timersData.filter(b => b.type === "raid").length;
+  const totalEpics = timersData.filter(b => b.type === "epic").length;
+  document.getElementById("raid-count").textContent = `(${raids.length}/${totalRaids})`;
+  document.getElementById("epic-count").textContent = `(${epics.length}/${totalEpics})`;
+}
+
+// ── Live Countdown Tick ────────────────────────────────────
+function tick() {
+  const now = Date.now();
+  for (const boss of timersData) {
+    const el = document.querySelector(`[data-countdown="${boss.id}"]`);
+    if (!el || !boss.killTime) continue;
+    const status = getStatus(boss);
+    const baseMs = boss.respawnBaseH * 3600000;
+    const maxMs = (boss.respawnBaseH + boss.respawnRandomH) * 3600000;
+    if (status === "dead") {
+      const rem = boss.killTime + baseMs - now;
+      el.textContent = rem > 0 ? `Window opens in ${fmtDuration(rem)}` : "Window opening…";
+    } else if (status === "window") {
+      const rem = boss.killTime + maxMs - now;
+      el.textContent = rem > 0 ? `Window closes in ${fmtDuration(rem)}` : "Closing…";
+    } else if (status === "overdue") {
+      renderAll();
+      return;
+    }
+  }
+}
+
+// ── Connection ─────────────────────────────────────────────
+function setConnection(state, detail) {
+  const el = document.getElementById("connection-status");
+  if (state === "ok") {
+    el.innerHTML = '<span class="status-dot dot-green dot-pulse"></span> Live';
+  } else if (state === "error") {
+    el.innerHTML = `<span class="status-dot dot-red"></span> ${detail}`;
+  } else {
+    el.innerHTML = '<span class="status-dot dot-orange"></span> Connecting…';
+  }
+}
+
+async function fetchTimers() {
+  try {
+    setConnection("connecting");
+    const res = await fetch(`${WORKER_URL}/timers`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    timersData = data.timers;
+    setConnection("ok");
+    document.getElementById("last-update").textContent = `Updated ${fmtUTC(Date.now())}`;
+    renderAll();
+  } catch (e) {
+    setConnection("error", e.message);
+    // Show error in grids only on first load
+    if (timersData.length === 0) {
+      const errHtml = `<div class="error-state">Could not connect to timer service.<br/>Check back shortly.</div>`;
+      document.getElementById("raid-grid").innerHTML = errHtml;
+      document.getElementById("epic-grid").innerHTML = errHtml;
+    }
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────
+fetchTimers();
+setInterval(fetchTimers, 30000);
+setInterval(tick, 1000);
+
+// Handle hash anchors from /drops command links
+if (window.location.hash) {
+  setTimeout(() => {
+    const el = document.querySelector(window.location.hash);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.style.outline = "2px solid var(--gold)";
+      setTimeout(() => el.style.outline = "", 3000);
+    }
+  }, 1500);
+}
+</script>
+</body>
+</html>
