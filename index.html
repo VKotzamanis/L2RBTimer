@@ -4,45 +4,81 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>L2 Reborn — Raid Boss Timer</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Fira+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-/* ── Reset & Base ─────────────────────────────────────────── */
+/* ── Reset & Base (Giran Palette) ─────────────────────────── */
 :root {
-  --bg: #0d0d0f; --surface: #16161a; --card: #1c1c22; --border: #2a2a32;
-  --gold: #c9a84c; --gold-dim: #8a7233; --text: #d4d0c8; --text-dim: #7a7770;
-  --red: #c0392b; --orange: #e67e22; --green: #27ae60; --blue: #2980b9;
-  --yellow: #f1c40f; --purple: #9b59b6;
+  --bg: #0b101a; 
+  --surface: #0c121d; 
+  --card: #111824; 
+  --border: #283a54;
+  --gold: #ebd48d; 
+  --gold-dim: #c2a34f; 
+  --text: #d1dce8; 
+  --text-dim: #6b829e;
+  --red: #f87171; 
+  --orange: #fbbf24;
+  --green: #4ade80; 
+  --blue: #60a5fa;
+  --purple: #c084fc;
 }
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
   font-family: 'Crimson Text', Georgia, serif;
-  background: var(--bg); color: var(--text);
-  min-height: 100vh; line-height: 1.5;
+  background: var(--bg); 
+  color: var(--text);
+  min-height: 100vh; 
+  line-height: 1.5;
+  overflow-y: scroll;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3d5273; }
+
+/* ── Typography Utilities ─────────────────────────────────── */
+.mono { font-family: 'Fira Mono', monospace; }
+.cinzel { font-family: 'Cinzel', serif; }
 
 /* ── Header ───────────────────────────────────────────────── */
 .header {
-  text-align: center; padding: 1.5rem 1rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, #12121590 0%, var(--bg) 100%);
+  text-align: center; 
+  padding: 20px 24px 16px;
+  border-bottom: 2px solid var(--border);
+  background: linear-gradient(180deg, #1b263b, #0b101a);
 }
 .header h1 {
-  font-family: 'Cinzel', serif; color: var(--gold);
-  font-size: 20px; letter-spacing: 0.08em;
+  font-family: 'Cinzel', 'Georgia', serif; 
+  color: var(--gold);
+  font-size: 22px; 
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
-.header p { color: var(--text-dim); font-size: 12px; margin-top: 0.25rem; }
+.header p { 
+  color: var(--text-dim); 
+  font-size: 12px; 
+  margin-top: 4px; 
+  letter-spacing: 1px;
+}
 
 /* ── Top Bar ──────────────────────────────────────────────── */
 .top-bar {
   display: flex; justify-content: center; align-items: center; gap: 1rem;
-  padding: 0.4rem 1rem; background: var(--surface);
-  border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap;
+  padding: 8px 16px; 
+  background: var(--surface);
+  border-bottom: 1px solid var(--border); 
+  font-size: 13px; 
+  flex-wrap: wrap;
 }
 .status-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  display: inline-block; margin-right: 4px;
+  display: inline-block; margin-right: 6px;
 }
-.dot-green  { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .dot-orange { background: var(--orange); }
 .dot-red    { background: var(--red); }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -50,165 +86,189 @@ body {
 
 /* ── Controls Bar ─────────────────────────────────────────── */
 .controls {
-  max-width: 1060px; margin: 0.8rem auto 0; padding: 0 1rem;
+  max-width: 1060px; margin: 16px auto 0; padding: 0 16px;
 }
 .controls-row {
-  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;
-  margin-bottom: 0.5rem;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  margin-bottom: 10px;
 }
 .controls-label {
-  font-size: 12px; color: var(--text-dim); white-space: nowrap; font-weight: 600;
+  font-size: 12px; color: var(--text-dim); white-space: nowrap; 
+  font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
 }
-.filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
 .filter-btn {
-  font-family: 'Crimson Text', serif;
-  font-size: 12px; padding: 3px 10px; border-radius: 4px;
-  cursor: pointer; border: 1px solid var(--border);
-  background: var(--card); color: var(--text-dim); transition: all 0.15s;
+  font-family: 'Cinzel', serif;
+  font-size: 12px; padding: 6px 12px; border-radius: 4px;
+  cursor: pointer; border: 1px solid transparent;
+  background: #1e2b40; color: var(--text-dim); 
+  font-weight: 700; letter-spacing: 0.5px;
+  transition: all 0.2s;
 }
-.filter-btn:hover { border-color: var(--gold-dim); }
+.filter-btn:hover { border-color: var(--border); color: var(--text); }
 .filter-btn.active { color: #fff; }
-.filter-btn.active[data-status="dead"]    { background: var(--red); border-color: var(--red); }
-.filter-btn.active[data-status="window"]  { background: var(--orange); border-color: var(--orange); }
-.filter-btn.active[data-status="alive"]   { background: var(--text-dim); border-color: var(--text-dim); }
-.filter-btn.active[data-status="overdue"] { background: var(--green); border-color: var(--green); }
-.filter-btn.active[data-type="raid"]      { background: var(--blue); border-color: var(--blue); }
-.filter-btn.active[data-type="epic"]      { background: var(--purple); border-color: var(--purple); }
+.filter-btn.active[data-status="dead"]    { background: var(--card); border-color: var(--red); color: var(--red); }
+.filter-btn.active[data-status="window"]  { background: var(--card); border-color: var(--orange); color: var(--orange); }
+.filter-btn.active[data-status="alive"]   { background: var(--card); border-color: var(--text-dim); color: var(--text); }
+.filter-btn.active[data-status="overdue"] { background: var(--card); border-color: var(--green); color: var(--green); }
+.filter-btn.active[data-type="raid"]      { background: var(--card); border-color: var(--blue); color: var(--blue); }
+.filter-btn.active[data-type="epic"]      { background: var(--card); border-color: var(--purple); color: var(--purple); }
 
-.sort-select {
-  font-family: 'Crimson Text', serif; font-size: 12px;
-  padding: 3px 8px; border-radius: 4px; cursor: pointer;
-  background: var(--card); color: var(--text); border: 1px solid var(--border);
+/* Standard Inputs */
+.sort-select, .search-input, .level-input {
+  width: 100%; padding: 7px 10px; 
+  background: #080c14; border: 1px solid var(--border); 
+  border-radius: 6px; color: var(--gold); 
+  font-size: 13px; font-family: 'Fira Mono', monospace; 
+  outline: none; box-sizing: border-box;
+  transition: border-color 0.2s;
 }
-.sort-select:focus { outline: 1px solid var(--gold-dim); }
-
-.search-input, .level-input {
-  font-family: 'Crimson Text', serif; font-size: 12px;
-  padding: 3px 8px; border-radius: 4px;
-  background: var(--card); color: var(--text); border: 1px solid var(--border);
-}
-.search-input { width: 160px; }
-.level-input  { width: 80px; text-align: center; }
-.search-input::placeholder, .level-input::placeholder { color: var(--text-dim); }
-.search-input:focus, .level-input:focus { outline: 1px solid var(--gold-dim); }
+.sort-select { width: auto; font-family: 'Crimson Text', serif; color: var(--text); }
+.search-input { width: 180px; }
+.level-input  { width: 70px; text-align: center; }
+.search-input::placeholder, .level-input::placeholder { color: var(--text-dim); font-family: 'Crimson Text', serif; }
+.sort-select:focus, .search-input:focus, .level-input:focus { border-color: var(--gold-dim); }
 
 /* ── Legend ────────────────────────────────────────────────── */
 .legend {
-  max-width: 1060px; margin: 0.4rem auto; padding: 0 1rem;
-  display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 12px; color: var(--text-dim);
+  max-width: 1060px; margin: 12px auto; padding: 0 16px;
+  display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim);
 }
-.legend-item { display: flex; align-items: center; gap: 3px; }
-.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
 /* ── Boss Grid ────────────────────────────────────────────── */
-.section { max-width: 1060px; margin: 0.8rem auto; padding: 0 1rem; }
+.section { max-width: 1060px; margin: 16px auto; padding: 0 16px; }
 .section h2 {
-  font-family: 'Cinzel', serif; color: var(--gold); font-size: 16px;
-  border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; margin-bottom: 0.6rem;
-  letter-spacing: 0.06em;
+  font-family: 'Cinzel', serif; color: var(--gold); font-size: 14px;
+  border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 14px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
 }
+.count-badge { font-family: 'Fira Mono', monospace; font-size: 12px; color: var(--text-dim); }
+
 .boss-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.6rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;
 }
 .empty-state {
-  grid-column: 1 / -1; text-align: center; padding: 1.5rem;
-  color: var(--text-dim); font-size: 14px; font-style: italic;
+  grid-column: 1 / -1; text-align: center; padding: 40px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text-dim); font-size: 15px; font-style: italic;
 }
 
 /* ── Loading / Error ──────────────────────────────────────── */
-.loading-state {
-  text-align: center; padding: 3rem 1rem; color: var(--text-dim); font-size: 14px;
-}
+.loading-state { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 15px; }
 .loading-state .spinner {
-  display: inline-block; width: 20px; height: 20px;
+  display: inline-block; width: 24px; height: 24px;
   border: 2px solid var(--border); border-top-color: var(--gold);
   border-radius: 50%; animation: spin 0.8s linear infinite;
-  margin-bottom: 0.5rem;
+  margin-bottom: 12px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error-state {
-  text-align: center; padding: 2rem 1rem; color: var(--red); font-size: 14px;
-}
+.error-state { text-align: center; padding: 40px; color: var(--red); font-size: 15px; background: #210e11; border: 1px solid #f8717133; border-radius: 10px; }
 
-/* ── Boss Card ────────────────────────────────────────────── */
+/* ── Boss Card (Giran Style) ──────────────────────────────── */
 .boss-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
-  padding: 0.7rem 0.8rem; transition: border-color 0.3s;
+  background: var(--card); 
+  border: 1px solid var(--border); 
+  border-radius: 10px;
+  padding: 16px; 
+  display: flex; flex-direction: column;
+  transition: all 0.2s ease;
 }
-.boss-card.status-alive   { border-left: 3px solid var(--text-dim); }
-.boss-card.status-dead    { border-left: 3px solid var(--red); }
-.boss-card.status-window  { border-left: 3px solid var(--orange); }
-.boss-card.status-overdue { border-left: 3px solid var(--green); }
+.boss-card:hover { border-color: #3d5273; background: #151e2e; }
 
-.boss-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; }
-.boss-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); }
-.boss-level { font-size: 16px; color: var(--text-dim); font-weight: 600; font-family: 'Cinzel', serif; }
+/* Status borders */
+.boss-card.status-alive   { border-left: 4px solid var(--text-dim); }
+.boss-card.status-dead    { border-left: 4px solid var(--red); }
+.boss-card.status-window  { border-left: 4px solid var(--orange); }
+.boss-card.status-overdue { border-left: 4px solid var(--green); }
 
-.boss-status { font-size: 12px; margin-bottom: 0.3rem; font-weight: 600; }
+.boss-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.boss-name { font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold); font-weight: 700; letter-spacing: 0.5px; line-height: 1.2; }
+.boss-level { font-size: 15px; color: var(--text-dim); font-weight: 700; font-family: 'Fira Mono', monospace; }
+
+/* Tactical Matrix Tags (Giran Badge Style) */
+.boss-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px 0; }
+.tag { 
+  display: inline-block; padding: 2px 8px; border-radius: 4px; 
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; 
+  font-family: 'Cinzel', serif; text-transform: uppercase;
+}
+.tag-sa { background: #60a5fa22; color: #60a5fa; border: 1px solid #60a5fa44; }
+.tag-herb { background: #4ade8022; color: #4ade80; border: 1px solid #4ade8044; }
+.tag-weak { background: #f8717122; color: #f87171; border: 1px solid #f8717144; }
+.tag-resist { background: #6b829e22; color: #6b829e; border: 1px solid #6b829e44; }
+
+.boss-status { 
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; 
+  letter-spacing: 1.5px; margin-bottom: 8px; 
+}
 .boss-status.st-alive   { color: var(--text-dim); }
 .boss-status.st-dead    { color: var(--red); }
 .boss-status.st-window  { color: var(--orange); }
 .boss-status.st-overdue { color: var(--green); }
 
-.boss-info { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
-.boss-info span { display: inline-block; margin-right: 0.8rem; }
+/* Detail Rows */
+.boss-info-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+  font-size: 13px; margin-bottom: 6px;
+}
+.boss-info-label { color: var(--text-dim); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding-top: 2px; }
+.boss-info-value { color: var(--text); font-family: 'Fira Mono', monospace; font-size: 13px; }
 
-.countdown { font-size: 14px; color: var(--text); margin-top: 0.2rem; font-weight: 600; }
-
-/* ── Collapsible Drops ────────────────────────────────────── */
-.drops-toggle { margin-top: 0.4rem; width: 100%; }
-.drops-toggle summary {
-  cursor: pointer; font-size: 12px; color: var(--purple);
-  list-style: none; user-select: none;
+.countdown { 
+  font-family: 'Fira Mono', monospace; font-size: 14px; 
+  color: var(--gold); margin-top: 6px; font-weight: 700; 
+  background: #080c14; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid #ebd48d33; text-align: center;
 }
-.drops-toggle summary::-webkit-details-marker { display: none; }
-.drops-toggle summary::before { content: "💎 "; }
-.drops-toggle summary::after { content: " ▸"; font-size: 10px; }
-.drops-toggle[open] summary::after { content: " ▾"; }
-.drop-list {
-  margin-top: 0.3rem; padding: 0.4rem; background: var(--surface);
-  border-radius: 4px; border: 1px solid var(--border);
-}
-.drop-list ul { list-style: none; padding: 0; }
-.drop-list li {
-  font-size: 12px; color: var(--text); padding: 2px 0;
-  border-bottom: 1px solid var(--border);
-}
-.drop-list li:last-child { border-bottom: none; }
-.drop-list .wiki-link {
-  display: inline-block; margin-top: 0.3rem; font-size: 12px;
-  color: var(--blue); text-decoration: none;
-}
-.drop-list .wiki-link:hover { text-decoration: underline; }
 
 /* ── Scouting Intel ───────────────────────────────────────── */
 .scout-intel {
-  margin-top: 0.3rem; padding: 0.25rem 0.5rem;
-  border-radius: 4px; font-size: 12px;
-  border: 1px dashed var(--border); background: rgba(255,255,255,0.02);
+  margin-top: 10px; padding: 8px 12px;
+  border-radius: 6px; font-size: 13px;
+  background: #080c14;
 }
-.scout-intel.scout-alive { border-color: var(--green); color: var(--green); }
-.scout-intel.scout-dead  { border-color: var(--red); color: var(--red); }
-.scout-intel .scout-age  { color: var(--text-dim); }
+.scout-intel.scout-alive { border: 1px solid #4ade8033; }
+.scout-intel.scout-dead  { border: 1px solid #f8717133; }
+.scout-status-text { font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 1px; }
+.scout-alive .scout-status-text { color: var(--green); }
+.scout-dead .scout-status-text { color: var(--red); }
+.scout-intel .scout-age  { color: var(--text-dim); font-family: 'Fira Mono', monospace; font-size: 11px; float: right; margin-top: 2px; }
+
+/* ── Full Width Wiki Button (Giran Secondary Button Style) ── */
+.wiki-btn {
+  display: block; width: 100%; text-align: center; margin-top: auto; 
+  padding: 8px 0; background: #1e2b40; color: var(--text); 
+  border: 1px solid var(--border); border-radius: 6px;
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: 13px; letter-spacing: 1px;
+  text-decoration: none; transition: all 0.2s ease;
+}
+.wiki-btn:hover { 
+  background: linear-gradient(135deg, #ebd48d, #c2a34f); 
+  color: #0b101a; border-color: #ebd48d; 
+}
 
 /* ── Footer ───────────────────────────────────────────────── */
 .footer {
-  text-align: center; padding: 1.2rem; color: var(--text-dim); font-size: 12px;
-  border-top: 1px solid var(--border); margin-top: 1.5rem;
+  max-width: 960px; margin: 40px auto 0; padding: 20px 16px 32px;
+  border-top: 1px solid var(--border);
+  text-align: center; color: var(--text-dim); font-size: 14px; line-height: 1.9;
 }
-.footer a { color: var(--gold-dim); text-decoration: none; }
+.footer-title { font-family: 'Cinzel', serif; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 10px; }
+.footer a { color: var(--gold); text-decoration: none; font-weight: 600; }
 .footer a:hover { text-decoration: underline; }
-
-.count-badge {
-  display: inline-block; font-family: 'Crimson Text', serif;
-  font-size: 12px; color: var(--text-dim); margin-left: 0.5rem;
-}
+.footer-cmd { font-family: 'Fira Mono', monospace; background: #111824; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--text); }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 600px) {
   .boss-grid { grid-template-columns: 1fr; }
-  .controls-row { gap: 0.4rem; }
-  .search-input { width: 120px; }
+  .controls-row { gap: 8px; }
+  .search-input { width: 140px; }
+  .boss-info-grid { grid-template-columns: 1fr; gap: 2px; }
+  .boss-info-label { display: none; } /* Hide labels on mobile to save space */
 }
 </style>
 </head>
@@ -223,8 +283,8 @@ body {
 <!-- ── Top Bar ─────────────────────────────────────────────── -->
 <div class="top-bar">
   <span id="connection-status"><span class="status-dot dot-orange"></span> Connecting…</span>
-  <span id="last-update" style="color:var(--text-dim)"></span>
-  <button class="filter-btn active" id="tz-toggle" onclick="toggleTimezone()" style="margin-left:0.4rem">🕐 UTC</button>
+  <span id="last-update" class="mono" style="color:var(--text-dim)"></span>
+  <button class="filter-btn active" id="tz-toggle" onclick="toggleTimezone()" style="margin-left:8px">🕐 UTC</button>
 </div>
 
 <!-- ── Controls ────────────────────────────────────────────── -->
@@ -232,30 +292,33 @@ body {
   <div class="controls-row">
     <span class="controls-label">Status:</span>
     <div class="filter-group" id="status-filters">
-      <button class="filter-btn active" data-status="dead" onclick="toggleFilter(this)">🔴 Dead</button>
-      <button class="filter-btn active" data-status="window" onclick="toggleFilter(this)">🟠 Window</button>
-      <button class="filter-btn active" data-status="alive" onclick="toggleFilter(this)">⚪ Unknown</button>
-      <button class="filter-btn active" data-status="overdue" onclick="toggleFilter(this)">🟢 Respawned</button>
+      <button class="filter-btn active" data-status="dead" onclick="toggleFilter(this)">Dead</button>
+      <button class="filter-btn active" data-status="window" onclick="toggleFilter(this)">Window</button>
+      <button class="filter-btn active" data-status="alive" onclick="toggleFilter(this)">Unknown</button>
+      <button class="filter-btn active" data-status="overdue" onclick="toggleFilter(this)">Respawned</button>
     </div>
-    <span class="controls-label" style="margin-left:0.6rem">Type:</span>
+  </div>
+  <div class="controls-row" style="margin-top: 12px;">
+    <span class="controls-label">Type:</span>
     <div class="filter-group" id="type-filters">
       <button class="filter-btn active" data-type="raid" onclick="toggleFilter(this)">Raid</button>
       <button class="filter-btn active" data-type="epic" onclick="toggleFilter(this)">Epic</button>
     </div>
-  </div>
-  <div class="controls-row">
-    <span class="controls-label">Sort:</span>
+    
+    <span class="controls-label" style="margin-left:auto;">Sort:</span>
     <select class="sort-select" id="sort-select" onchange="renderAll()">
-      <option value="urgency">Urgency (soonest first)</option>
+      <option value="urgency">Urgency (Soonest)</option>
       <option value="level-asc">Level ↑</option>
       <option value="level-desc">Level ↓</option>
       <option value="name">Name A–Z</option>
     </select>
-    <span class="controls-label" style="margin-left:0.6rem">Search:</span>
+  </div>
+  <div class="controls-row" style="margin-top: 12px;">
+    <span class="controls-label">Search:</span>
     <input class="search-input" id="search-input" type="text" placeholder="Boss name…" oninput="renderAll()"/>
-    <span class="controls-label" style="margin-left:0.6rem">Level:</span>
+    <span class="controls-label" style="margin-left:12px;">Level:</span>
     <input class="level-input" id="level-min" type="text" placeholder="Min" oninput="renderAll()"/>
-    <span style="color:var(--text-dim); font-size:12px;">—</span>
+    <span style="color:var(--text-dim); font-size:14px; margin: 0 4px;">—</span>
     <input class="level-input" id="level-max" type="text" placeholder="Max" oninput="renderAll()"/>
   </div>
 </div>
@@ -266,7 +329,7 @@ body {
   <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Dead</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Window</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Respawned</div>
-  <div class="legend-item" style="border-left:1px solid var(--border); padding-left:0.6rem;">
+  <div class="legend-item" style="border-left:1px solid var(--border); padding-left:12px;">
     <div class="legend-dot" style="background:var(--green); border:1px dashed var(--green)"></div> Scout: Alive</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--red); border:1px dashed var(--red)"></div> Scout: Dead</div>
 </div>
@@ -275,24 +338,30 @@ body {
 <div class="section" id="section-raid">
   <h2>Raid Bosses <span class="count-badge" id="raid-count"></span></h2>
   <div class="boss-grid" id="raid-grid">
-    <div class="loading-state" id="raid-loading"><div class="spinner"></div><br/>Loading boss data…</div>
+    <div class="loading-state" id="raid-loading"><div class="spinner"></div><br/>Loading database…</div>
   </div>
 </div>
 
 <div class="section" id="section-epic">
   <h2>Epic Bosses <span class="count-badge" id="epic-count"></span></h2>
   <div class="boss-grid" id="epic-grid">
-    <div class="loading-state" id="epic-loading"><div class="spinner"></div><br/>Loading boss data…</div>
+    <div class="loading-state" id="epic-loading"><div class="spinner"></div><br/>Loading database…</div>
   </div>
 </div>
 
 <!-- ── Footer ──────────────────────────────────────────────── -->
 <div class="footer">
-  <p>Data sourced from <a href="https://l2reborn.org/features" target="_blank">L2 Reborn</a>,
-     <a href="https://lineage2wiki.org/" target="_blank">lineage2wiki.org</a>, and
-     <a href="https://lineage.pmfun.com/" target="_blank">PMfun</a>.
-     Respawn times may change — verify with your server.</p>
-  <p style="margin-top:0.3rem">Report kills via <code style="font-size:12px">/kill</code> in Discord · Dashboard is read-only</p>
+  <div class="footer-title">✠ Command Center ✠</div>
+  <div style="margin-bottom: 8px;">
+    Report kills via <span class="footer-cmd">/kill</span> in Discord. This dashboard is read-only.
+  </div>
+  <div style="margin-bottom: 8px;">
+    Data sourced from <a href="https://l2reborn.org/features" target="_blank">L2 Reborn</a> and 
+    <a href="https://lineage2wiki.org/" target="_blank">lineage2wiki.org</a>.
+  </div>
+  <div style="font-size: 11px; color: #2e3f59; margin-top: 16px;">
+    Designed for L2 Reborn Franz
+  </div>
 </div>
 
 <script>
@@ -300,15 +369,10 @@ body {
 // L2 Reborn — Raid Boss Timer · Dashboard
 // ═══════════════════════════════════════════════════════════════
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │  CONFIGURATION — Update this URL after deploying the Worker │
-// └─────────────────────────────────────────────────────────────┘
 const WORKER_URL = "https://l2rb-timer.vkotzama.workers.dev";
 
 // ── State ──────────────────────────────────────────────────
 let timersData = [];
-
-// ── Timezone ───────────────────────────────────────────────
 let useLocal = false;
 
 function toggleTimezone() {
@@ -350,7 +414,7 @@ function fmtDuration(ms) {
   return `${s}s`;
 }
 
-// ── Status Logic ───────────────────────────────────────────
+// ── Status & Urgency Logic ─────────────────────────────────
 function getStatus(boss) {
   if (!boss.killTime) return "alive";
   const elapsed = Date.now() - boss.killTime;
@@ -374,6 +438,32 @@ function getUrgency(boss) {
   }
   if (status === "overdue") return 0;
   return 100000000000 + boss.level;
+}
+
+// ── Tactical Data Parser ───────────────────────────────────
+function generateTacticalTags(boss) {
+  let tags = [];
+  
+  if (boss.sa && boss.sa.length) {
+    tags.push(`<span class="tag tag-sa">💎 SA: ${boss.sa.join(', ')}</span>`);
+  }
+  if (boss.herbs) {
+    tags.push(`<span class="tag tag-herb">🌿 HERBS</span>`);
+  }
+  if (boss.weaknesses && boss.weaknesses.length) {
+    boss.weaknesses.forEach(w => {
+      let cleanName = w.name.replace(/Weak Point/i, '').replace(/Attack/i, '').replace(/Weapons/i, '').trim();
+      tags.push(`<span class="tag tag-weak">⚔️ WEAK: ${cleanName}</span>`);
+    });
+  }
+  if (boss.strengths && boss.strengths.length) {
+    boss.strengths.forEach(s => {
+      let cleanName = s.name.replace(/Greater/i, '').replace(/Resist/i, '').replace(/Attacks/i, '').replace(/Weapons/i, '').trim();
+      tags.push(`<span class="tag tag-resist">🛡️ RESIST: ${cleanName}</span>`);
+    });
+  }
+  
+  return tags.length > 0 ? `<div class="boss-tags">${tags.join('')}</div>` : '';
 }
 
 // ── Filters ────────────────────────────────────────────────
@@ -430,40 +520,45 @@ function renderCard(boss) {
   let statusText = "", countdownText = "";
   switch (status) {
     case "alive":   statusText = "UNKNOWN / ALIVE"; break;
-    case "dead":    statusText = "DEAD"; countdownText = `Window opens in ${fmtDuration(earliestMs - now)}`; break;
-    case "window":  statusText = "WINDOW OPEN"; countdownText = `Window closes in ${fmtDuration(latestMs - now)}`; break;
+    case "dead":    statusText = "DEAD"; countdownText = `Window in ${fmtDuration(earliestMs - now)}`; break;
+    case "window":  statusText = "WINDOW OPEN"; countdownText = `Closes in ${fmtDuration(latestMs - now)}`; break;
     case "overdue": statusText = "RESPAWNED"; break;
   }
-
-  const dropItems = (boss.keyDrops || []).map(d => `<li>${d}</li>`).join("");
-  const wikiLink = boss.wikiUrl
-    ? `<a class="wiki-link" href="${boss.wikiUrl}" target="_blank">📜 Full drop table on wiki →</a>` : "";
 
   let scoutHtml = "";
   if (boss.scoutStatus && boss.scoutAt) {
     const ageStr = fmtDuration(now - boss.scoutAt);
     if (boss.scoutStatus === "alive") {
-      scoutHtml = `<div class="scout-intel scout-alive">✅ Alive — ${boss.scoutBy} <span class="scout-age">(${ageStr} ago)</span></div>`;
+      scoutHtml = `
+        <div class="scout-intel scout-alive">
+          <span class="scout-status-text">✓ ALIVE</span> 
+          <span style="color:var(--text); margin-left:6px;">— ${boss.scoutBy}</span> 
+          <span class="scout-age">${ageStr} ago</span>
+        </div>`;
     } else {
-      scoutHtml = `<div class="scout-intel scout-dead">❌ Dead (unknown kill) — ${boss.scoutBy} <span class="scout-age">(${ageStr} ago)</span></div>`;
+      scoutHtml = `
+        <div class="scout-intel scout-dead">
+          <span class="scout-status-text">✕ DEAD</span> 
+          <span style="color:var(--text); margin-left:6px;">— ${boss.scoutBy}</span> 
+          <span class="scout-age">${ageStr} ago</span>
+        </div>`;
     }
   }
 
   let timerHtml = "";
   if (boss.killTime) {
     timerHtml = `
-      <div class="boss-info">
-        <span>Killed: ${fmtTime(boss.killTime)}</span>
-        ${boss.reportedBy ? `<span>by ${boss.reportedBy}</span>` : ""}
-      </div>
-      <div class="boss-info">
-        <span>Window: ${fmtTime(earliestMs)} — ${fmtTime(latestMs)}</span>
+      <div class="boss-info-grid">
+        <div class="boss-info-label">Killed</div>
+        <div class="boss-info-value">${fmtTime(boss.killTime)} ${boss.reportedBy ? `<span style="color:var(--text-dim);font-family:'Crimson Text',serif">by ${boss.reportedBy}</span>` : ""}</div>
+        <div class="boss-info-label">Window</div>
+        <div class="boss-info-value">${fmtTime(earliestMs)} — ${fmtTime(latestMs)}</div>
       </div>`;
   } else {
     timerHtml = `
-      <div class="boss-info">
-        <span>Respawn: ${boss.respawnBaseH}h + ${boss.respawnRandomH}h random</span>
-        <span>Drops: ${boss.drops || "—"}</span>
+      <div class="boss-info-grid">
+        <div class="boss-info-label">Respawn</div>
+        <div class="boss-info-value">${boss.respawnBaseH}h + ${boss.respawnRandomH}h random</div>
       </div>`;
   }
 
@@ -473,23 +568,21 @@ function renderCard(boss) {
         <span class="boss-name">${boss.name}</span>
         <span class="boss-level">Lv.${boss.level}</span>
       </div>
+      ${generateTacticalTags(boss)}
       <div class="boss-status st-${status}">${statusText}</div>
       ${timerHtml}
       ${countdownText ? `<div class="countdown" data-countdown="${boss.id}">${countdownText}</div>` : ""}
       ${scoutHtml}
-      <details class="drops-toggle">
-        <summary>Key Drops (${(boss.keyDrops || []).length})</summary>
-        <div class="drop-list">
-          <ul>${dropItems || "<li>No data yet</li>"}</ul>
-          ${wikiLink}
-        </div>
-      </details>
+      
+      <div style="margin-top: 16px;">
+        <a class="wiki-btn" href="${boss.wikiUrl}" target="_blank">View Drops on Wiki</a>
+      </div>
     </div>`;
 }
 
 // ── Render All ─────────────────────────────────────────────
 function renderAll() {
-  if (timersData.length === 0) return; // Still loading
+  if (timersData.length === 0) return;
 
   const filters = getFilters();
   const sorter = getSorter();
@@ -522,17 +615,19 @@ function tick() {
   for (const boss of timersData) {
     const el = document.querySelector(`[data-countdown="${boss.id}"]`);
     if (!el || !boss.killTime) continue;
+    
     const status = getStatus(boss);
     const baseMs = boss.respawnBaseH * 3600000;
     const maxMs = (boss.respawnBaseH + boss.respawnRandomH) * 3600000;
+    
     if (status === "dead") {
       const rem = boss.killTime + baseMs - now;
-      el.textContent = rem > 0 ? `Window opens in ${fmtDuration(rem)}` : "Window opening…";
+      el.textContent = rem > 0 ? `Window in ${fmtDuration(rem)}` : "Window opening…";
     } else if (status === "window") {
       const rem = boss.killTime + maxMs - now;
-      el.textContent = rem > 0 ? `Window closes in ${fmtDuration(rem)}` : "Closing…";
+      el.textContent = rem > 0 ? `Closes in ${fmtDuration(rem)}` : "Closing…";
     } else if (status === "overdue") {
-      renderAll();
+      renderAll(); 
       return;
     }
   }
@@ -562,7 +657,6 @@ async function fetchTimers() {
     renderAll();
   } catch (e) {
     setConnection("error", e.message);
-    // Show error in grids only on first load
     if (timersData.length === 0) {
       const errHtml = `<div class="error-state">Could not connect to timer service.<br/>Check back shortly.</div>`;
       document.getElementById("raid-grid").innerHTML = errHtml;
@@ -576,7 +670,6 @@ fetchTimers();
 setInterval(fetchTimers, 30000);
 setInterval(tick, 1000);
 
-// Handle hash anchors from /drops command links
 if (window.location.hash) {
   setTimeout(() => {
     const el = document.querySelector(window.location.hash);
